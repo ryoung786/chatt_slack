@@ -19,13 +19,8 @@ defmodule ChattSlack.Application do
     Supervisor.start_link(children, opts)
   end
 
-  defp goth_source() do
-    service_account = Application.fetch_env!(:chatt_slack, :service_account)
-
-    credentials = %{
-      "private_key" => Keyword.fetch!(service_account, :private_key),
-      "client_email" => Keyword.fetch!(service_account, :client_email)
-    }
+  def goth_source() do
+    credentials = Application.fetch_env!(:chatt_slack, :service_account)
 
     {:service_account, credentials,
      scopes: [
