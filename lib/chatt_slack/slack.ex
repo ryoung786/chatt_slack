@@ -38,7 +38,7 @@ defmodule ChattSlack.Slack do
 
     Req.post(state.req,
       url: "chat.postMessage",
-      params: %{channel: channel_id, text: message}
+      params: %{channel: channel_id, text: message, unfurl_links: false, unfurl_media: false}
     )
 
     {:noreply, state}

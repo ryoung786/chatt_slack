@@ -50,7 +50,7 @@ defmodule ChattSlack.EventReminder do
     header_msg =
       if Enum.empty?(events),
         do: "No events planned for tomorrow.",
-        else: "Tomorrow's events"
+        else: "*Tomorrow's events*"
 
     Slack.send_message(@channel, header_msg)
 
@@ -69,6 +69,8 @@ defmodule ChattSlack.EventReminder do
   end
 
   defp event_to_message(event) do
+    summary = "<#{event.htmlLink}|#{event.summary}>"
+
     time =
       case event.start.dateTime do
         nil ->
@@ -80,8 +82,15 @@ defmodule ChattSlack.EventReminder do
           |> Calendar.strftime("%1I:%M%P")
       end
 
-    time = time && "Time: #{time}"
-    location = event.location && "Location: #{event.location}"
-    [event.summary, time, location] |> Enum.filter(& &1) |> Enum.join("\n")
+    time = time && "• Time: #{time}"
+
+    location =
+      event.location && "• Location: <#{google_maps_link(event.location)}|#{event.location}>"
+
+    [summary, time, location] |> Enum.filter(& &1) |> Enum.join("\n")
+  end
+
+  defp google_maps_link(query) do
+    "http://maps.google.com/?#{URI.encode_query(%{"q" => query})}"
   end
 end
