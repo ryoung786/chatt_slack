@@ -6,7 +6,7 @@ defmodule ChattSlack.EventReminder do
 
   @tz "America/New_York"
   @notification_time ~T[12:00:00]
-  @channel "bot-test"
+  @channel Application.compile_env(:chatt_slack, :slack_channel)
 
   ######################################################################
   # CLIENT
