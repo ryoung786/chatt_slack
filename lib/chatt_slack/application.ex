@@ -10,7 +10,9 @@ defmodule ChattSlack.Application do
     children = [
       ChattSlack.Slack,
       ChattSlack.EventReminder,
-      {Goth, name: ChattSlack.Goth, source: goth_source(), http_client: &Req.request/1}
+      {Goth, name: ChattSlack.Goth, source: goth_source(), http_client: &Req.request/1},
+      {DNSCluster, query: Application.get_env(:chatt_slack, :dns_cluster_query) || :ignore},
+      ChattSlackWeb.Endpoint
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
@@ -28,5 +30,13 @@ defmodule ChattSlack.Application do
        "https://www.googleapis.com/auth/calendar",
        "https://www.googleapis.com/auth/calendar.events.readonly"
      ]}
+  end
+
+  # Tell Phoenix to update the endpoint configuration
+  # whenever the application is updated.
+  @impl true
+  def config_change(changed, _new, removed) do
+    ChattSlackWeb.Endpoint.config_change(changed, removed)
+    :ok
   end
 end
