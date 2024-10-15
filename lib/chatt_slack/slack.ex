@@ -17,8 +17,8 @@ defmodule ChattSlack.Slack do
     GenServer.cast(Slack, {:send_message, channel_name, message})
   end
 
-  def send_modal(trigger_id) do
-    GenServer.cast(Slack, {:send_modal, trigger_id})
+  def send_modal(trigger_id, type) do
+    GenServer.cast(Slack, {:send_modal, trigger_id, type})
   end
 
   ######################################################################
@@ -49,11 +49,11 @@ defmodule ChattSlack.Slack do
   end
 
   @impl true
-  def handle_cast({:send_modal, trigger_id}, state) do
+  def handle_cast({:send_modal, trigger_id, type}, state) do
     Req.post(
       state.req,
       url: "views.open",
-      json: %{trigger_id: trigger_id, view: modal_view()}
+      json: %{trigger_id: trigger_id, view: modal_view(type)}
     )
 
     {:noreply, state}
@@ -67,12 +67,13 @@ defmodule ChattSlack.Slack do
     Map.new(resp.body["channels"], fn channel -> {channel["name"], channel["id"]} end)
   end
 
-  def modal_view() do
+  def modal_view(type) do
     # now = DateTime.now!("America/New_York")
+    title = "#{type |> to_string() |> String.capitalize()} Plans"
 
     %{
       type: "modal",
-      title: %{type: "plain_text", text: "Run Plans", emoji: true},
+      title: %{type: "plain_text", text: title, emoji: true},
       close: %{type: "plain_text", text: "Cancel", emoji: true},
       submit: %{type: "plain_text", text: "Create", emoji: true},
       blocks: [

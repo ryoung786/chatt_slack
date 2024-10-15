@@ -5,32 +5,48 @@ defmodule ChattSlackWeb.SlashCommandController do
   alias ChattSlack.GoogleCalendar
 
   def slash_command(conn, %{"command" => "/run"} = params) do
-    Slack.send_modal(params["trigger_id"])
+    Slack.send_modal(params["trigger_id"], :run)
     Plug.Conn.send_resp(conn, 200, [])
   end
 
-  def slash_command(conn, params) do
+  def slash_command(conn, %{"command" => "/fun"} = params) do
+    Slack.send_modal(params["trigger_id"], :fun)
     Plug.Conn.send_resp(conn, 200, [])
   end
 
-  def interactivity(conn, params) do
-    payload = Jason.decode!(params["payload"])
+  def slash_command(conn, %{"command" => "/race"} = params) do
+    Slack.send_modal(params["trigger_id"], :race)
+    Plug.Conn.send_resp(conn, 200, [])
+  end
+
+  def slash_command(conn, _params), do: Plug.Conn.send_resp(conn, 200, [])
+
+  def interactivity(conn, %{"payload" => payload}) do
+    payload = Jason.decode!(payload)
 
     if payload["type"] == "view_submission" do
-      values =
-        payload["view"]["state"]["values"]
-        |> Map.values()
-        |> Map.new(fn
-          %{"title" => %{"value" => v}} -> {:title, String.trim(v)}
-          %{"description" => %{"value" => v}} -> {:description, String.trim(v)}
-          %{"location" => %{"value" => v}} -> {:location, String.trim(v)}
-          %{"start-time" => %{"selected_date_time" => v}} -> {:start, DateTime.from_unix!(v)}
-        end)
-
       Task.start(fn ->
+        values =
+          payload["view"]["state"]["values"]
+          |> Map.values()
+          |> Map.new(fn
+            %{"title" => %{"value" => v}} -> {:title, String.trim(v)}
+            %{"description" => %{"value" => v}} -> {:description, String.trim(v)}
+            %{"location" => %{"value" => v}} -> {:location, String.trim(v)}
+            %{"start-time" => %{"selected_date_time" => v}} -> {:start, DateTime.from_unix!(v)}
+          end)
+
+        type =
+          case payload["view"]["title"]["text"] do
+            "Run Plans" -> :run
+            "Fun Plans" -> :fun
+            "Race Plans" -> :race
+            _ -> :fun
+          end
+
         with %{status: 200} <-
                GoogleCalendar.insert_event(
-                 :run,
+                 type,
                  values.title,
                  values.start,
                  DateTime.add(values.start, 1, :hour),
