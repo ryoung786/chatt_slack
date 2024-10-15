@@ -68,7 +68,7 @@ defmodule ChattSlack.EventReminder do
     )
   end
 
-  defp event_to_message(event) do
+  def event_to_message(event) do
     summary = "<#{event.htmlLink}|#{event.summary}>"
 
     time =

@@ -47,15 +47,15 @@ defmodule ChattSlackWeb.SlashCommandController do
             %{"frequency" => %{"selected_option" => opt}} -> {:frequency, opt["value"]}
           end)
 
-        type =
+        {type, channel} =
           case payload["view"]["title"]["text"] do
-            "Run Plans" -> :run
-            "Fun Plans" -> :fun
-            "Race Plans" -> :race
-            _ -> :fun
+            "Run Plans" -> {:run, "run-plans"}
+            "Fun Plans" -> {:fun, "fun-plans"}
+            "Race Plans" -> {:race, "run-plans"}
+            _ -> {:fun, "fun-plans"}
           end
 
-        with %{status: 200} <-
+        with %{status: 200} = res <-
                GoogleCalendar.insert_event(
                  type,
                  values.title,
@@ -65,7 +65,20 @@ defmodule ChattSlackWeb.SlashCommandController do
                  location: values.location,
                  recurring: values.frequency
                ) do
-          Slack.send_message("bot-test", "New run created: #{values.title}")
+          {:ok, start, _} = res.body["start"]["dateTime"] |> DateTime.from_iso8601()
+
+          event = %{
+            htmlLink: res.body["htmlLink"],
+            summary: res.body["summary"],
+            start: %{dateTime: start},
+            location: res.body["location"]
+          }
+
+          Slack.send_message(
+            channel,
+            "*A new #{type} event was created*\n\n" <>
+              ChattSlack.EventReminder.event_to_message(event)
+          )
         end
       end)
     end
