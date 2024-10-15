@@ -10,5 +10,6 @@ defmodule ChattSlackWeb.Router do
 
     # get "/", SlashCommandController, :slash_command
     post "/", SlashCommandController, :slash_command
+    post "/interactivity", SlashCommandController, :interactivity
   end
 end

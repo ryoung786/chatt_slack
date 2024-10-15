@@ -1,74 +1,47 @@
 defmodule ChattSlackWeb.SlashCommandController do
   use ChattSlackWeb, :controller
 
+  alias ChattSlack.Slack
+  alias ChattSlack.GoogleCalendar
+
   def slash_command(conn, %{"command" => "/run"} = params) do
-    json(conn, response())
+    Slack.send_modal(params["trigger_id"])
+    Plug.Conn.send_resp(conn, 200, [])
   end
 
   def slash_command(conn, params) do
-    IO.inspect(conn, label: "[xxx] full conn")
-    IO.inspect(conn.body_params, label: "[xxx] body_params")
-    IO.inspect(params, label: "[xxx] params")
-    json(conn, response())
+    Plug.Conn.send_resp(conn, 200, [])
   end
 
-  def response() do
-    now = DateTime.now!("America/New_York")
+  def interactivity(conn, params) do
+    payload = Jason.decode!(params["payload"])
 
-    %{
-      blocks: [
-        %{
-          type: "input",
-          element: %{
-            type: "datepicker",
-            initial_date: DateTime.to_date(now),
-            placeholder: %{
-              type: "plain_text",
-              text: "Select a date",
-              emoji: true
-            },
-            action_id: "datepicker-action"
-          },
-          label: %{
-            type: "plain_text",
-            text: "Label",
-            emoji: true
-          }
-        },
-        %{
-          type: "input",
-          element: %{
-            type: "timepicker",
-            initial_time: Calendar.strftime(now, "%H:%M"),
-            placeholder: %{
-              type: "plain_text",
-              text: "Select time",
-              emoji: true
-            },
-            action_id: "timepicker-action"
-          },
-          label: %{
-            type: "plain_text",
-            text: "Label",
-            emoji: true
-          }
-        },
-        %{
-          type: "actions",
-          elements: [
-            %{
-              type: "button",
-              text: %{
-                type: "plain_text",
-                text: "Click Me",
-                emoji: true
-              },
-              value: "click_me_123",
-              action_id: "actionId-0"
-            }
-          ]
-        }
-      ]
-    }
+    if payload["type"] == "view_submission" do
+      values =
+        payload["view"]["state"]["values"]
+        |> Map.values()
+        |> Map.new(fn
+          %{"title" => %{"value" => v}} -> {:title, String.trim(v)}
+          %{"description" => %{"value" => v}} -> {:description, String.trim(v)}
+          %{"location" => %{"value" => v}} -> {:location, String.trim(v)}
+          %{"start-time" => %{"selected_date_time" => v}} -> {:start, DateTime.from_unix!(v)}
+        end)
+
+      Task.start(fn ->
+        with %{status: 200} <-
+               GoogleCalendar.insert_event(
+                 :run,
+                 values.title,
+                 values.start,
+                 DateTime.add(values.start, 1, :hour),
+                 description: values.description,
+                 location: values.location
+               ) do
+          Slack.send_message("bot-test", "New run created: #{values.title}")
+        end
+      end)
+    end
+
+    json(conn, %{})
   end
 end

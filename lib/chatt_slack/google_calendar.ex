@@ -27,7 +27,6 @@ defmodule ChattSlack.GoogleCalendar do
         ]
       ).body
 
-    for event <- events, do: IO.inspect(event)
     events
   end
 
@@ -43,7 +42,7 @@ defmodule ChattSlack.GoogleCalendar do
     Req.post!(req(),
       url: "calendars/#{calendar_id()}/events",
       json: %{
-        summary: emoji <> title <> emoji,
+        summary: emoji <> " #{title} " <> emoji,
         description: opts[:description],
         location: opts[:location],
         start: %{dateTime: start},
