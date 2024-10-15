@@ -114,6 +114,28 @@ defmodule ChattSlack.Slack do
             # initial_time: Calendar.strftime(now, "%H:%M")
           },
           label: %{type: "plain_text", text: "Label", emoji: true}
+        },
+        %{
+          type: "input",
+          element: %{
+            type: "static_select",
+            initial_option: %{
+              value: "never",
+              text: %{type: "plain_text", text: "Never", emoji: true}
+            },
+            options: [
+              %{value: "never", text: %{type: "plain_text", text: "Never", emoji: true}},
+              %{value: "weekly", text: %{type: "plain_text", text: "Weekly", emoji: true}},
+              %{value: "monthly", text: %{type: "plain_text", text: "Monthly", emoji: true}},
+              %{value: "yearly", text: %{type: "plain_text", text: "Yearly", emoji: true}}
+            ],
+            action_id: "frequency"
+          },
+          label: %{
+            type: "plain_text",
+            text: "Recurring?",
+            emoji: true
+          }
         }
       ]
     }

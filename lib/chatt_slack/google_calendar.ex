@@ -39,14 +39,23 @@ defmodule ChattSlack.GoogleCalendar do
         _fun -> "✨"
       end
 
+    freq =
+      case opts[:recurring] do
+        "weekly" -> ["RRULE:FREQ=WEEKLY"]
+        "monthly" -> ["RRULE:FREQ=MONTHLY;BYMONTHDAY=#{start.day}"]
+        "yearly" -> ["RRULE:FREQ=YEARLY"]
+        _ -> nil
+      end
+
     Req.post!(req(),
       url: "calendars/#{calendar_id()}/events",
       json: %{
         summary: emoji <> " #{title} " <> emoji,
         description: opts[:description],
         location: opts[:location],
-        start: %{dateTime: start},
-        end: %{dateTime: stop}
+        start: %{dateTime: start, timeZone: "America/New_York"},
+        end: %{dateTime: stop, timeZone: "America/New_York"},
+        recurrence: freq
       }
     )
   end

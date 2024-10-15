@@ -24,6 +24,16 @@ defmodule ChattSlackWeb.SlashCommandController do
   def interactivity(conn, %{"payload" => payload}) do
     payload = Jason.decode!(payload)
 
+    if payload["type"] == "shortcut" do
+      event_type =
+        case payload["callback_id"] do
+          "create_run" -> :run
+          "create_fun" -> :fun
+        end
+
+      Slack.send_modal(payload["trigger_id"], event_type)
+    end
+
     if payload["type"] == "view_submission" do
       Task.start(fn ->
         values =
@@ -34,6 +44,7 @@ defmodule ChattSlackWeb.SlashCommandController do
             %{"description" => %{"value" => v}} -> {:description, String.trim(v)}
             %{"location" => %{"value" => v}} -> {:location, String.trim(v)}
             %{"start-time" => %{"selected_date_time" => v}} -> {:start, DateTime.from_unix!(v)}
+            %{"frequency" => %{"selected_option" => opt}} -> {:frequency, opt["value"]}
           end)
 
         type =
@@ -51,7 +62,8 @@ defmodule ChattSlackWeb.SlashCommandController do
                  values.start,
                  DateTime.add(values.start, 1, :hour),
                  description: values.description,
-                 location: values.location
+                 location: values.location,
+                 recurring: values.frequency
                ) do
           Slack.send_message("bot-test", "New run created: #{values.title}")
         end
