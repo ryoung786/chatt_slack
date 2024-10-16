@@ -1,7 +1,7 @@
 # File: docker_phx/Dockerfile
-ARG ELIXIR_VERSION=1.16.1
-ARG OTP_VERSION=26.1.2
-ARG DEBIAN_VERSION=bullseye-20240130-slim
+ARG ELIXIR_VERSION=1.17.2
+ARG OTP_VERSION=27.0
+ARG DEBIAN_VERSION=bullseye-20240701-slim
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
@@ -62,4 +62,5 @@ RUN chown -R nobody: /app
 USER nobody
 
 ENV HOME=/app
-ENTRYPOINT ["/app/bin/chatt_slack", "start"]
+# ENTRYPOINT ["/app/bin/chatt_slack", "start"]
+CMD ["/app/bin/server"]
