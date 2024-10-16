@@ -12,3 +12,7 @@ config :chatt_slack,
     System.fetch_env!("SERVICE_ACCOUNT_BASE64")
     |> Base.decode64!()
     |> Jason.decode!()
+
+if System.get_env("PHX_SERVER") do
+  config :chatt_slack, ChattSlackWeb.Endpoint, server: true
+end
