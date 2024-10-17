@@ -4,6 +4,10 @@ defmodule ChattSlackWeb.SlashCommandController do
   alias ChattSlack.Slack
   alias ChattSlack.GoogleCalendar
 
+  def ping(conn, _params) do
+    json(conn, %{ping: "pong"})
+  end
+
   def slash_command(conn, %{"command" => "/run"} = params) do
     Slack.send_modal(params["trigger_id"], :run)
     Plug.Conn.send_resp(conn, 200, [])
@@ -36,6 +40,7 @@ defmodule ChattSlackWeb.SlashCommandController do
 
     if payload["type"] == "view_submission" do
       Task.start(fn ->
+        # unpack the payload form values
         values =
           payload["view"]["state"]["values"]
           |> Map.values()
@@ -47,14 +52,16 @@ defmodule ChattSlackWeb.SlashCommandController do
             %{"frequency" => %{"selected_option" => opt}} -> {:frequency, opt["value"]}
           end)
 
-        {type, channel} =
+        type =
           case payload["view"]["title"]["text"] do
-            "Run Plans" -> {:run, "run-plans"}
-            "Fun Plans" -> {:fun, "fun-plans"}
-            "Race Plans" -> {:race, "run-plans"}
-            _ -> {:fun, "fun-plans"}
+            "Run Plans" -> :run
+            "Fun Plans" -> :fun
+            "Race Plans" -> :race
+            _ -> :fun
           end
 
+        # Call Google API to create the Calendar Event
+        # On success, send a slack msg to the appropriate channel to announce it
         with %{status: 200} = res <-
                GoogleCalendar.insert_event(
                  type,
@@ -73,6 +80,8 @@ defmodule ChattSlackWeb.SlashCommandController do
             start: %{dateTime: start},
             location: res.body["location"]
           }
+
+          channel = if type in [:run, :race], do: "run-plans", else: "fun-plans"
 
           Slack.send_message(
             channel,
