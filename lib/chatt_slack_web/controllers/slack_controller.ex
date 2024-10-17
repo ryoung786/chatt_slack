@@ -1,4 +1,4 @@
-defmodule ChattSlackWeb.SlashCommandController do
+defmodule ChattSlackWeb.SlackController do
   use ChattSlackWeb, :controller
 
   alias ChattSlack.Slack
@@ -7,23 +7,6 @@ defmodule ChattSlackWeb.SlashCommandController do
   def ping(conn, _params) do
     json(conn, %{ping: "pong"})
   end
-
-  def slash_command(conn, %{"command" => "/run"} = params) do
-    Slack.send_modal(params["trigger_id"], :run)
-    Plug.Conn.send_resp(conn, 200, [])
-  end
-
-  def slash_command(conn, %{"command" => "/fun"} = params) do
-    Slack.send_modal(params["trigger_id"], :fun)
-    Plug.Conn.send_resp(conn, 200, [])
-  end
-
-  def slash_command(conn, %{"command" => "/race"} = params) do
-    Slack.send_modal(params["trigger_id"], :race)
-    Plug.Conn.send_resp(conn, 200, [])
-  end
-
-  def slash_command(conn, _params), do: Plug.Conn.send_resp(conn, 200, [])
 
   def interactivity(conn, %{"payload" => payload}) do
     payload = Jason.decode!(payload)

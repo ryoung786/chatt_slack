@@ -8,8 +8,7 @@ defmodule ChattSlackWeb.Router do
   scope "/api", ChattSlackWeb do
     pipe_through(:api)
 
-    get "/ping", SlashCommandController, :ping
-    post "/", SlashCommandController, :slash_command
-    post "/interactivity", SlashCommandController, :interactivity
+    get "/ping", SlackController, :ping
+    post "/interactivity", SlackController, :interactivity
   end
 end
