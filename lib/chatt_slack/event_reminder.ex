@@ -1,5 +1,6 @@
 defmodule ChattSlack.EventReminder do
   use GenServer
+  require Logger
 
   alias ChattSlack.Slack
   alias ChattSlack.GoogleCalendar
@@ -30,30 +31,28 @@ defmodule ChattSlack.EventReminder do
 
   @impl true
   def handle_cast(:run_now, state) do
-    get_events_and_send_to_slack()
+    GoogleCalendar.get_tomorrows_events() |> announce_in_slack()
+    Logger.info("event reminders sent to slack (via run_now)")
     {:noreply, state}
   end
 
   @impl true
   def handle_info(:do_work, state) do
     schedule_work()
-    get_events_and_send_to_slack()
+    GoogleCalendar.get_tomorrows_events() |> announce_in_slack()
+    Logger.info("event reminders sent to slack")
     {:noreply, state}
   end
 
   ######################################################################
   # HELPERS
 
-  defp get_events_and_send_to_slack() do
-    events = GoogleCalendar.get_tomorrows_events()
+  defp announce_in_slack([]) do
+    Slack.send_message(@channel, "No events planned for tomorrow.")
+  end
 
-    header_msg =
-      if Enum.empty?(events),
-        do: "No events planned for tomorrow.",
-        else: "*Tomorrow's events*"
-
-    Slack.send_message(@channel, header_msg)
-
+  defp announce_in_slack(events) do
+    Slack.send_message(@channel, "*Tomorrow's events*")
     for event <- events, do: Slack.send_message(@channel, event_to_message(event))
   end
 
@@ -66,6 +65,8 @@ defmodule ChattSlack.EventReminder do
       :do_work,
       DateTime.diff(alarm, DateTime.now!(@tz), :millisecond)
     )
+
+    Logger.info("scheduled event reminder announcement for #{alarm}")
   end
 
   def event_to_message(event) do

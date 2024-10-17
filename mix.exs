@@ -30,7 +30,6 @@ defmodule ChattSlack.MixProject do
     [
       {:goth, "~> 1.4"},
       {:req, "~> 0.5.1"},
-      {:google_api_calendar, "~> 0.23.1"},
       {:tzdata, "~> 1.1"},
       {:phoenix, "~> 1.7.14"},
       {:telemetry_metrics, "~> 1.0"},
