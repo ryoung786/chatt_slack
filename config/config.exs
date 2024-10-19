@@ -2,7 +2,9 @@ import Config
 
 config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
 
-config :chatt_slack, slack_channel: "bot-test"
+config :chatt_slack,
+  slack_channel: "bot-test",
+  timezone: "America/New_York"
 
 config :chatt_slack,
   generators: [timestamp_type: :utc_datetime]

@@ -1,4 +1,6 @@
 defmodule ChattSlack.GoogleCalendar do
+  @tz Application.compile_env(:chatt_slack, :timezone)
+
   defp req() do
     token = Goth.fetch!(ChattSlack.Goth)
 
@@ -13,7 +15,7 @@ defmodule ChattSlack.GoogleCalendar do
   end
 
   def get_tomorrows_events() do
-    tomorrow = DateTime.now!("America/New_York") |> DateTime.to_date() |> Date.add(1)
+    tomorrow = DateTime.now!(@tz) |> DateTime.to_date() |> Date.add(1)
 
     %{"items" => events} =
       Req.get!(
@@ -30,9 +32,9 @@ defmodule ChattSlack.GoogleCalendar do
     events
   end
 
-  def insert_event(type, title, %DateTime{} = start, %DateTime{} = stop, opts \\ []) do
+  def insert_event(event) do
     emoji =
-      case type do
+      case event.type do
         :run -> "👟"
         :race -> "🏅"
         :bday -> "🎂"
@@ -40,9 +42,9 @@ defmodule ChattSlack.GoogleCalendar do
       end
 
     freq =
-      case opts[:recurring] do
+      case event.recurring do
         "weekly" -> ["RRULE:FREQ=WEEKLY"]
-        "monthly" -> ["RRULE:FREQ=MONTHLY;BYMONTHDAY=#{start.day}"]
+        "monthly" -> ["RRULE:FREQ=MONTHLY;BYMONTHDAY=#{event.start.day}"]
         "yearly" -> ["RRULE:FREQ=YEARLY"]
         _ -> nil
       end
@@ -50,11 +52,11 @@ defmodule ChattSlack.GoogleCalendar do
     Req.post!(req(),
       url: "calendars/#{calendar_id()}/events",
       json: %{
-        summary: emoji <> " #{title} " <> emoji,
-        description: opts[:description],
-        location: opts[:location],
-        start: %{dateTime: start, timeZone: "America/New_York"},
-        end: %{dateTime: stop, timeZone: "America/New_York"},
+        summary: emoji <> " #{event.title} " <> emoji,
+        description: event.description,
+        location: event.location,
+        start: %{dateTime: event.start, timeZone: @tz},
+        end: %{dateTime: event.stop, timeZone: @tz},
         recurrence: freq
       }
     )
