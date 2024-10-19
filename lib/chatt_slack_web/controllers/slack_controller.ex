@@ -3,6 +3,7 @@ defmodule ChattSlackWeb.SlackController do
 
   alias ChattSlack.Slack
   alias ChattSlack.GoogleCalendar
+  alias ChattSlack.EventReminder
 
   def ping(conn, _params) do
     json(conn, %{ping: "pong"})
@@ -24,7 +25,7 @@ defmodule ChattSlackWeb.SlackController do
     if payload["type"] == "view_submission" do
       Task.start(fn ->
         # unpack the payload form values
-        values =
+        event =
           payload["view"]["state"]["values"]
           |> Map.values()
           |> Map.new(fn
@@ -38,39 +39,18 @@ defmodule ChattSlackWeb.SlackController do
         type =
           case payload["view"]["title"]["text"] do
             "Run Plans" -> :run
-            "Fun Plans" -> :fun
             "Race Plans" -> :race
             _ -> :fun
           end
 
+        event = Map.merge(event, type: type, stop: DateTime.add(event.start, 1, :hour))
+
         # Call Google API to create the Calendar Event
         # On success, send a slack msg to the appropriate channel to announce it
-        with %{status: 200} = res <-
-               GoogleCalendar.insert_event(
-                 type,
-                 values.title,
-                 values.start,
-                 DateTime.add(values.start, 1, :hour),
-                 description: values.description,
-                 location: values.location,
-                 recurring: values.frequency
-               ) do
-          {:ok, start, _} = res.body["start"]["dateTime"] |> DateTime.from_iso8601()
-
-          event = %{
-            htmlLink: res.body["htmlLink"],
-            summary: res.body["summary"],
-            start: %{dateTime: start},
-            location: res.body["location"]
-          }
-
+        with %{status: 200, body: event} <- GoogleCalendar.insert_event(event) do
           channel = if type in [:run, :race], do: "run-plans", else: "fun-plans"
-
-          Slack.send_message(
-            channel,
-            "*A new #{type} event was created*\n\n" <>
-              ChattSlack.EventReminder.event_to_message(event)
-          )
+          msg = "*A new #{type} event was created*\n\n" <> EventReminder.event_to_message(event)
+          Slack.send_message(channel, msg)
         end
       end)
     end

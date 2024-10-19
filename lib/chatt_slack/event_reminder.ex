@@ -5,7 +5,7 @@ defmodule ChattSlack.EventReminder do
   alias ChattSlack.Slack
   alias ChattSlack.GoogleCalendar
 
-  @tz "America/New_York"
+  @tz Application.compile_env(:chatt_slack, :timezone)
   @notification_time ~T[12:00:00]
   @channel Application.compile_env(:chatt_slack, :slack_channel)
 
@@ -70,28 +70,32 @@ defmodule ChattSlack.EventReminder do
   end
 
   def event_to_message(event) do
-    summary = "<#{event.htmlLink}|#{event.summary}>"
+    summary = "<#{event["htmlLink"]}|#{event["summary"]}>"
 
-    time =
-      case event.start.dateTime do
-        nil ->
-          nil
-
-        start_time ->
-          start_time
-          |> DateTime.shift_zone!(@tz)
-          |> Calendar.strftime("%1I:%M%P")
-      end
-
+    time = fmt_datetime(event["start"]["dateTime"])
     time = time && "• Time: #{time}"
 
     location =
-      event.location && "• Location: <#{google_maps_link(event.location)}|#{event.location}>"
+      event["location"] &&
+        "• Location: <#{google_maps_link(event["location"])}|#{event["location"]}>"
 
     [summary, time, location] |> Enum.filter(& &1) |> Enum.join("\n")
   end
 
   defp google_maps_link(query) do
     "http://maps.google.com/?#{URI.encode_query(%{"q" => query})}"
+  end
+
+  defp fmt_datetime(nil), do: nil
+
+  defp fmt_datetime(datetime_str) when is_binary(datetime_str) do
+    {:ok, dt, _} = DateTime.from_iso8601(datetime_str)
+    fmt_datetime(dt)
+  end
+
+  defp fmt_datetime(%DateTime{} = dt) do
+    dt
+    |> DateTime.shift_zone!(@tz)
+    |> Calendar.strftime("%1I:%M%P")
   end
 end
