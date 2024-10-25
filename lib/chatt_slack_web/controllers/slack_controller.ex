@@ -43,7 +43,7 @@ defmodule ChattSlackWeb.SlackController do
             _ -> :fun
           end
 
-        event = Map.merge(event, type: type, stop: DateTime.add(event.start, 1, :hour))
+        event = Map.merge(event, %{type: type, stop: DateTime.add(event.start, 1, :hour)})
 
         # Call Google API to create the Calendar Event
         # On success, send a slack msg to the appropriate channel to announce it
