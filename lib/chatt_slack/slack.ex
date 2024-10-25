@@ -129,7 +129,7 @@ defmodule ChattSlack.Slack do
               %{value: "monthly", text: %{type: "plain_text", text: "Monthly", emoji: true}},
               %{value: "yearly", text: %{type: "plain_text", text: "Yearly", emoji: true}}
             ],
-            action_id: "frequency"
+            action_id: "recurring"
           },
           label: %{
             type: "plain_text",

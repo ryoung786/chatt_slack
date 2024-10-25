@@ -33,7 +33,7 @@ defmodule ChattSlackWeb.SlackController do
             %{"description" => %{"value" => v}} -> {:description, String.trim(v)}
             %{"location" => %{"value" => v}} -> {:location, String.trim(v)}
             %{"start-time" => %{"selected_date_time" => v}} -> {:start, DateTime.from_unix!(v)}
-            %{"frequency" => %{"selected_option" => opt}} -> {:frequency, opt["value"]}
+            %{"recurring" => %{"selected_option" => opt}} -> {:recurring, opt["value"]}
           end)
 
         type =
