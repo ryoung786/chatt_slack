@@ -99,7 +99,7 @@ defmodule ChattSlack.EventReminder do
 
     if include_date? do
       cur_year = DateTime.now!(@tz).year
-      date_fmt = if dt.year == cur_year, do: "%a, %b %d", else: "%a, %b %d, %Y"
+      date_fmt = if dt.year == cur_year, do: "%A, %b %d", else: "%A, %b %d, %Y"
       Calendar.strftime(dt, time_fmt <> " " <> date_fmt)
     else
       Calendar.strftime(dt, time_fmt)
