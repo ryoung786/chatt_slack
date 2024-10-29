@@ -49,7 +49,11 @@ defmodule ChattSlackWeb.SlackController do
         # On success, send a slack msg to the appropriate channel to announce it
         with %{status: 200, body: event} <- GoogleCalendar.insert_event(event) do
           channel = if type in [:run, :race], do: "run-plans", else: "fun-plans"
-          msg = "*A new #{type} event was created*\n\n" <> EventReminder.event_to_message(event)
+
+          msg =
+            "*A new #{type} event was created*\n\n" <>
+              EventReminder.event_to_message(event, :include_date)
+
           Slack.send_message(channel, msg)
         end
       end)

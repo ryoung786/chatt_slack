@@ -69,10 +69,10 @@ defmodule ChattSlack.EventReminder do
     Logger.info("scheduled event reminder announcement for #{alarm}")
   end
 
-  def event_to_message(event) do
+  def event_to_message(event, include_date? \\ false) do
     summary = "<#{event["htmlLink"]}|#{event["summary"]}>"
 
-    time = fmt_datetime(event["start"]["dateTime"])
+    time = fmt_datetime(event["start"]["dateTime"], include_date?)
     time = time && "• Time: #{time}"
 
     location =
@@ -86,16 +86,23 @@ defmodule ChattSlack.EventReminder do
     "http://maps.google.com/?#{URI.encode_query(%{"q" => query})}"
   end
 
-  defp fmt_datetime(nil), do: nil
+  defp fmt_datetime(nil, _include_date?), do: nil
 
-  defp fmt_datetime(datetime_str) when is_binary(datetime_str) do
+  defp fmt_datetime(datetime_str, include_date?) when is_binary(datetime_str) do
     {:ok, dt, _} = DateTime.from_iso8601(datetime_str)
-    fmt_datetime(dt)
+    fmt_datetime(dt, include_date?)
   end
 
-  defp fmt_datetime(%DateTime{} = dt) do
-    dt
-    |> DateTime.shift_zone!(@tz)
-    |> Calendar.strftime("%1I:%M%P")
+  defp fmt_datetime(%DateTime{} = dt, include_date?) do
+    time_fmt = "%1I:%M%P"
+    dt = DateTime.shift_zone!(dt, @tz)
+
+    if include_date? do
+      cur_year = DateTime.now!(@tz).year
+      date_fmt = if dt.year == cur_year, do: "%a, %b %d", else: "%a, %b %d, %Y"
+      Calendar.strftime(dt, time_fmt <> " " <> date_fmt)
+    else
+      Calendar.strftime(dt, time_fmt)
+    end
   end
 end
